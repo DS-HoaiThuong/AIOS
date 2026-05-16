@@ -9,6 +9,7 @@ import LifeBoard from "../components/LifeBoard";
 
 import DashboardBoard from "../components/DashboardBoard";
 import PomodoroTimer from "../components/PomodoroTimer";
+import FocusBoard from "../components/FocusBoard";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -111,6 +112,8 @@ export default function Home() {
             <FinanceBoard />
           ) : activeTab === "life" ? (
             <LifeBoard />
+          ) : activeTab === "focus" ? (
+            <FocusBoard />
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4">
               <BrainCircuit className="w-12 h-12 opacity-20" />

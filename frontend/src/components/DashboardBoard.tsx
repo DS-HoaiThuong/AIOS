@@ -36,12 +36,15 @@ export default function DashboardBoard() {
     return 'Good evening';
   };
 
-  const completedTasks = 2; // Mocking for UI match
+  const completedTasks = summary?.tasks?.completed || 0;
   const totalTasks = (summary?.tasks?.pending || 0) + completedTasks;
-  const focusHours = Math.floor((summary?.focus?.totalMinutes || 0) / 60);
-  const focusMins = (summary?.focus?.totalMinutes || 0) % 60;
-  const focusScore = Math.min(100, Math.floor(((summary?.focus?.totalMinutes || 0) / 240) * 100)) || 38; // Mock 38% if 0
-  const habitsPercent = summary?.habits?.total > 0 ? Math.floor((summary?.habits?.completedToday / summary?.habits?.total) * 100) : 50; // Mock 50%
+  const focusHours = Math.floor((summary?.focus?.todayMinutes || 0) / 60);
+  const focusMins = (summary?.focus?.todayMinutes || 0) % 60;
+  const focusScore = Math.min(100, Math.floor(((summary?.focus?.todayMinutes || 0) / 240) * 100)) || 0; 
+  const habitsPercent = summary?.habits?.total > 0 ? Math.floor((summary?.habits?.completedToday / summary?.habits?.total) * 100) : 0;
+  
+  const topPriorities = summary?.tasks?.topPriorities || [];
+  const aiBrief = summary?.aiBrief || "Generating insights...";
 
   return (
     <div className="max-w-6xl w-full flex flex-col gap-8">
@@ -51,7 +54,7 @@ export default function DashboardBoard() {
           {getGreeting()}, Hien! ☀️
         </h2>
         <p className="text-zinc-500 mt-2 text-base">
-          You have {summary?.tasks?.pending || 3} important tasks and {focusHours}h {focusMins}m of deep work logged today.
+          You have {summary?.tasks?.pending || 0} important tasks and {focusHours}h {focusMins}m of deep work logged today.
         </p>
       </div>
 
@@ -99,24 +102,21 @@ export default function DashboardBoard() {
           </div>
 
           <div className="space-y-4">
-            <PriorityItem 
-              title="Finalize MBA Research Paper" 
-              tag="MBA" 
-              date="May 15" 
-              urgency="URGENT" 
-            />
-            <PriorityItem 
-              title="Client XYZ Deliverables" 
-              tag="FREELANCE" 
-              date="May 16" 
-              urgency="URGENT" 
-            />
-            <PriorityItem 
-              title="Content Strategy Meeting Prep" 
-              tag="TEAM" 
-              date="May 18" 
-              urgency="HIGH" 
-            />
+            {topPriorities.length === 0 ? (
+              <div className="bg-white border border-zinc-200 rounded-2xl p-8 flex items-center justify-center text-zinc-400 font-medium">
+                No pending tasks right now. You're all caught up!
+              </div>
+            ) : (
+              topPriorities.map((task: any) => (
+                <PriorityItem 
+                  key={task.id}
+                  title={task.title} 
+                  tag={task.project} 
+                  date={task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No Date'} 
+                  urgency={task.priority.toUpperCase()} 
+                />
+              ))
+            )}
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export default function DashboardBoard() {
                 <h3 className="font-bold text-lg">AI Daily Brief</h3>
               </div>
               <p className="text-indigo-900/80 text-sm leading-relaxed mb-6 font-medium">
-                You are slightly overloaded in the Content domain. I suggest moving the Freelance tasks to Friday evening since your energy levels usually peak then for creative work.
+                {aiBrief}
               </p>
               <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-all shadow-md shadow-indigo-600/20 active:scale-[0.98]">
                 Start Focus Mode

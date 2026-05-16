@@ -78,7 +78,11 @@ export const fetchDashboardSummary = async () => {
   return response.data;
 };
 
-// Focus API
+export const fetchFocusSessions = async () => {
+  const response = await api.get('/focus');
+  return response.data;
+};
+
 export const startFocusSession = async (data: { mode: string; duration: number; taskId?: string }) => {
   const response = await api.post('/focus/start', data);
   return response.data;
