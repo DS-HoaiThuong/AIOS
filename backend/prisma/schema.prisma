@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Task {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  status       String    // 'todo', 'in-progress', 'done'
+  project      String    // 'UEF', 'Team', 'MBA', etc.
+  priority     String    // 'urgent', 'high', 'medium', 'low'
+  tags         String    // JSON string array
+  dueDate      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  aiSuggestion String?
+}
+
+model FocusSession {
+  id          String    @id @default(cuid())
+  mode        String    // 'pomodoro', 'deep-work', etc.
+  duration    Int       // in seconds
+  taskId      String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+}
+
+model Transaction {
+  id       String   @id @default(cuid())
+  title    String
+  amount   Float
+  type     String   // 'income', 'expense'
+  category String
+  date     DateTime
+  notes    String?
+}
+
+model FinancialGoal {
+  id            String @id @default(cuid())
+  title         String
+  targetAmount  Float
+  currentAmount Float  @default(0)
+  color         String
+}
+
+model Habit {
+  id             String @id @default(cuid())
+  title          String
+  icon           String
+  streak         Int    @default(0)
+  completedDates String // JSON string array of YYYY-MM-DD
+}
+
+model MoodEntry {
+  id    String   @id @default(cuid())
+  level String   // 'great', 'good', 'okay', 'stressed', 'bad'
+  date  String   @unique // YYYY-MM-DD
+  notes String?
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  tags      String?  // JSON string array
+  aiSummary String?
+}
+
+model AIInsight {
+  id        String   @id @default(cuid())
+  type      String   // 'achievement', 'warning', 'suggestion', 'brief'
+  message   String
+  createdAt DateTime @default(now())
+}
