@@ -7,6 +7,8 @@ import financeRoutes from './routes/finance';
 import lifeRoutes from './routes/life';
 import dashboardRoutes from './routes/dashboard';
 import focusRoutes from './routes/focus';
+import analyticsRoutes from './routes/analytics';
+import healthRoutes from './routes/health';
 
 dotenv.config();
 
@@ -27,6 +29,7 @@ app.use('/api/life', lifeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/focus', focusRoutes);
+app.use('/api/health', healthRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Task {
@@ -16,6 +17,7 @@ model Task {
   priority     String    // 'urgent', 'high', 'medium', 'low'
   tags         String    // JSON string array
   dueDate      DateTime?
+  link         String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   aiSuggestion String?
@@ -76,4 +78,24 @@ model AIInsight {
   type      String   // 'achievement', 'warning', 'suggestion', 'brief'
   message   String
   createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id           String @id @default(cuid())
+  title        String
+  amount       Float
+  billingCycle String // 'monthly', 'annually'
+  icon         String // 'terminal', 'cloud', 'brain', etc.
+}
+
+model HealthLog {
+  id           String   @id @default(cuid())
+  date         String   @unique // YYYY-MM-DD
+  sleepHours   Float?
+  waterGlasses Int?     @default(0)
+  exercised    Boolean  @default(false)
+  energyLevel  Int?     // 1-5 scale
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

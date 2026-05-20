@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import TaskBoard from "../components/TaskBoard";
-import { LayoutDashboard, CheckSquare, PiggyBank, BookHeart, BrainCircuit, Sparkles } from "lucide-react";
+import { LayoutDashboard, FolderKanban, PiggyBank, BookHeart, BrainCircuit, Sparkles, BarChart3 } from "lucide-react";
 
 import FinanceBoard from "../components/FinanceBoard";
 import LifeBoard from "../components/LifeBoard";
@@ -10,6 +10,7 @@ import LifeBoard from "../components/LifeBoard";
 import DashboardBoard from "../components/DashboardBoard";
 import PomodoroTimer from "../components/PomodoroTimer";
 import FocusBoard from "../components/FocusBoard";
+import AnalyticsBoard from "../components/AnalyticsBoard";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -34,8 +35,8 @@ export default function Home() {
             onClick={() => setActiveTab("dashboard")} 
           />
           <NavItem 
-            icon={<CheckSquare className="w-[18px] h-[18px]" />} 
-            label="Tasks" 
+            icon={<FolderKanban className="w-[18px] h-[18px]" />} 
+            label="Projects" 
             isActive={activeTab === "tasks"} 
             onClick={() => setActiveTab("tasks")} 
           />
@@ -56,6 +57,12 @@ export default function Home() {
             label="Life OS" 
             isActive={activeTab === "life"} 
             onClick={() => setActiveTab("life")} 
+          />
+          <NavItem 
+            icon={<BarChart3 className="w-[18px] h-[18px]" />} 
+            label="Analytics" 
+            isActive={activeTab === "analytics"} 
+            onClick={() => setActiveTab("analytics")} 
           />
         </nav>
 
@@ -105,7 +112,7 @@ export default function Home() {
         {/* Page Content */}
         <div className="p-10 flex-1">
           {activeTab === "dashboard" ? (
-            <DashboardBoard />
+            <DashboardBoard onNavigate={setActiveTab} />
           ) : activeTab === "tasks" ? (
             <TaskBoard />
           ) : activeTab === "finance" ? (
@@ -114,6 +121,8 @@ export default function Home() {
             <LifeBoard />
           ) : activeTab === "focus" ? (
             <FocusBoard />
+          ) : activeTab === "analytics" ? (
+            <AnalyticsBoard />
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4">
               <BrainCircuit className="w-12 h-12 opacity-20" />

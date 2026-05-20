@@ -45,6 +45,31 @@ export const deleteTransaction = async (id: string) => {
   return response.data;
 };
 
+export const fetchGoals = async () => {
+  const response = await api.get('/finance/goals');
+  return response.data;
+};
+
+export const createGoal = async (data: any) => {
+  const response = await api.post('/finance/goals', data);
+  return response.data;
+};
+
+export const updateGoal = async (id: string, data: any) => {
+  const response = await api.put(`/finance/goals/${id}`, data);
+  return response.data;
+};
+
+export const fetchSubscriptions = async () => {
+  const response = await api.get('/finance/subscriptions');
+  return response.data;
+};
+
+export const createSubscription = async (data: any) => {
+  const response = await api.post('/finance/subscriptions', data);
+  return response.data;
+};
+
 // Life API
 export const fetchHabits = async () => {
   const response = await api.get('/life/habits');
@@ -58,6 +83,11 @@ export const createHabit = async (data: any) => {
 
 export const checkinHabit = async (id: string, date: string) => {
   const response = await api.post(`/life/habits/${id}/checkin`, { date });
+  return response.data;
+};
+
+export const deleteHabit = async (id: string) => {
+  const response = await api.delete(`/life/habits/${id}`);
   return response.data;
 };
 
@@ -90,5 +120,44 @@ export const startFocusSession = async (data: { mode: string; duration: number; 
 
 export const completeFocusSession = async (id: string) => {
   const response = await api.post(`/focus/${id}/complete`);
+  return response.data;
+};
+
+// Projects / AI Project Planner
+export const generateProjectTasks = async (goal: string, projectName: string) => {
+  const response = await api.post('/ai/projects/generate', { goal, projectName });
+  return response.data;
+};
+
+export const deleteProject = async (projectName: string) => {
+  const response = await api.delete(`/tasks/project/${encodeURIComponent(projectName)}`);
+  return response.data;
+};
+
+// Analytics API
+export const fetchAnalytics = async (period: 'week' | 'month' = 'week') => {
+  const response = await api.get(`/analytics/worklife?period=${period}`);
+  return response.data;
+};
+
+// Health API
+export const fetchHealthToday = async () => {
+  const response = await api.get('/health/today');
+  return response.data;
+};
+
+export const upsertHealthToday = async (data: {
+  sleepHours?: number;
+  waterGlasses?: number;
+  exercised?: boolean;
+  energyLevel?: number;
+  notes?: string;
+}) => {
+  const response = await api.post('/health/today', data);
+  return response.data;
+};
+
+export const fetchHealthWeek = async () => {
+  const response = await api.get('/health/week');
   return response.data;
 };

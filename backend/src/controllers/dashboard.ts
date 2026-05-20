@@ -1,10 +1,16 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+dotenv.config();
+
+const getGemini = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not set in .env');
+  const genAI = new GoogleGenerativeAI(apiKey);
+  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+};
 
 export const getDashboardSummary = async (req: Request, res: Response) => {
   try {
@@ -17,22 +23,31 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
       where: { status: 'done' }
     });
 
-    const topPriorities = await prisma.task.findMany({
-      where: { status: { in: ['todo', 'in-progress'] } },
-      orderBy: [
-        { priority: 'asc' }, // Assuming 'urgent' comes first alphabetically or we might need custom logic. Actually urgent starts with u, high with h. Let's just sort by priority, or take top 3.
-        { createdAt: 'desc' }
-      ],
-      take: 3
-    });
-
-    // Sort priorities manually since string sort isn't perfect for urgency
-    const priorityWeight: any = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
     const allPendingTasks = await prisma.task.findMany({
       where: { status: { in: ['todo', 'in-progress'] } }
     });
     
-    const sortedPriorities = allPendingTasks.sort((a, b) => priorityWeight[b.priority] - priorityWeight[a.priority]).slice(0, 3);
+    const priorityWeight: any = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
+    const sortedPriorities = allPendingTasks
+      .sort((a, b) => {
+        // 1. Sort by dueDate (earliest first, nulls at the bottom)
+        const hasDateA = a.dueDate ? 1 : 0;
+        const hasDateB = b.dueDate ? 1 : 0;
+        
+        if (hasDateA && hasDateB) {
+          const timeA = new Date(a.dueDate!).getTime();
+          const timeB = new Date(b.dueDate!).getTime();
+          if (timeA !== timeB) return timeA - timeB;
+        } else if (hasDateA && !hasDateB) {
+          return -1;
+        } else if (!hasDateA && hasDateB) {
+          return 1;
+        }
+        
+        // 2. Sort by priority
+        return priorityWeight[b.priority] - priorityWeight[a.priority];
+      })
+      .slice(0, 3);
 
     // 2. Finance
     const transactions = await prisma.transaction.findMany();
@@ -51,31 +66,24 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
 
     // 4. Focus Time
     const focusSessions = await prisma.focusSession.findMany({
-      where: {
-        completedAt: { not: null }
-      }
+      where: { completedAt: { not: null } }
     });
     
-    // Focus today
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayFocus = focusSessions.filter(s => s.startedAt >= todayStart);
     const totalFocusMinutesToday = Math.floor(todayFocus.reduce((acc, s) => acc + s.duration, 0) / 60);
     const totalFocusMinutes = Math.floor(focusSessions.reduce((acc, s) => acc + s.duration, 0) / 60);
 
-    // 5. Generate AI Brief
+    // 5. Generate AI Brief via Gemini
     let aiBrief = "You are doing great! Keep up the momentum.";
     try {
-      const prompt = `Act as an AI Personal Assistant. The user has ${pendingTasksCount} pending tasks, completed ${completedTasksCount} tasks today, achieved ${completedHabitsToday}/${habits.length} habits, and focused for ${totalFocusMinutesToday} minutes today. Provide a very short, encouraging 2-sentence insight or recommendation to help them optimize their day.`;
-      
-      const completion = await openai.chat.completions.create({
-        messages: [{ role: 'system', content: prompt }],
-        model: 'gpt-3.5-turbo',
-        max_tokens: 60,
-      }, { timeout: 5000 });
-      aiBrief = completion.choices[0]?.message?.content || aiBrief;
-    } catch (aiError) {
-      console.error('Failed to generate AI brief, falling back to default.', aiError);
+      const model = getGemini();
+      const prompt = `Act as an AI Personal Assistant. The user has ${pendingTasksCount} pending tasks, completed ${completedTasksCount} tasks, achieved ${completedHabitsToday}/${habits.length} habits today, and focused for ${totalFocusMinutesToday} minutes. Provide a very short, encouraging 2-sentence insight to help them optimize their day. Be specific and motivating.`;
+      const result = await model.generateContent(prompt);
+      aiBrief = result.response.text() || aiBrief;
+    } catch (aiError: any) {
+      console.error('Failed to generate AI brief, falling back to default.', aiError?.message);
     }
 
     res.json({

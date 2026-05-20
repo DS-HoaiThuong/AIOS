@@ -1,9 +1,8 @@
 import { Router } from 'express';
+import { getWorkLifeAnalytics } from '../controllers/analytics';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  res.json({ message: 'Analytics route not implemented yet' });
-});
+router.get('/worklife', getWorkLifeAnalytics);
 
 export default router;

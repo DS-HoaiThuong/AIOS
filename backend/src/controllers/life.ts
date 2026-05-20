@@ -49,3 +49,14 @@ export const checkinHabit = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to check-in habit' });
   }
 };
+
+export const deleteHabit = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await prisma.habit.delete({ where: { id } });
+    res.json({ message: 'Habit deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete habit' });
+  }
+};
+

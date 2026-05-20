@@ -1,71 +1,100 @@
-import { MoreHorizontal, Calendar, Tag } from "lucide-react";
+import { MoreHorizontal, Calendar, Sparkles, Link as LinkIcon } from "lucide-react";
 
-export default function TaskItem({ task, onStatusChange }: { task: any, onStatusChange: (id: string, status: string) => void }) {
+export default function TaskItem({ task, onStatusChange, onEditClick, theme }: { task: any, onStatusChange: (id: string, status: string) => void, onEditClick?: (task: any) => void, theme?: string }) {
   
   const priorities: Record<string, string> = {
-    high: "bg-red-50 text-red-600 border-red-100",
-    medium: "bg-orange-50 text-orange-600 border-orange-100",
-    low: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    urgent: "bg-red-100 text-red-800 border-red-200",
+    high: "bg-orange-50 text-orange-700 border-orange-100",
+    medium: "bg-zinc-100 text-zinc-800 border-zinc-200",
+    low: "bg-emerald-50 text-emerald-700 border-emerald-100",
   };
 
+  const priorityLabels: Record<string, string> = {
+    urgent: "Urgent",
+    high: "High Priority",
+    medium: "Medium Priority",
+    low: "Low Priority",
+  };
+
+  const isCompleted = task.status === 'done';
+
   return (
-    <div className="group bg-white border border-zinc-200 hover:border-indigo-300 rounded-2xl p-4 transition-all hover:shadow-md cursor-grab active:cursor-grabbing">
+    <div className={`group bg-white rounded-md border border-zinc-200 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:bg-zinc-50 transition-colors cursor-pointer ${isCompleted ? 'opacity-60' : ''}`}>
       <div className="flex justify-between items-start mb-2">
-        <div className="flex flex-wrap gap-2 mb-2">
-          {task.priority && (
-            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${priorities[task.priority] || priorities.medium} uppercase tracking-wider`}>
-              {task.priority}
-            </span>
-          )}
-          {task.project && (
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-md border bg-zinc-100 text-zinc-600 border-zinc-200 uppercase tracking-wider">
-              {task.project}
-            </span>
-          )}
-        </div>
-        <button className="text-zinc-400 hover:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity">
+        <h3 className={`text-sm font-medium text-zinc-900 leading-snug ${isCompleted ? 'line-through text-zinc-500' : ''}`}>
+          {task.title}
+        </h3>
+        <button 
+          onClick={() => onEditClick && onEditClick(task)}
+          className="text-zinc-300 hover:text-zinc-700 transition-colors p-1 opacity-0 group-hover:opacity-100"
+        >
           <MoreHorizontal className="w-4 h-4" />
         </button>
       </div>
       
-      <h4 className="text-[15px] font-bold text-zinc-900 mb-2 leading-snug">{task.title}</h4>
-      
       {task.description && (
-        <p className="text-xs font-medium text-zinc-500 line-clamp-2 mb-3 leading-relaxed">{task.description}</p>
+        <p className={`text-xs text-zinc-500 mb-3 line-clamp-2 leading-relaxed`}>
+          {task.description}
+        </p>
       )}
 
-      <div className="flex items-center justify-between mt-4">
-        <div className="flex items-center gap-3 text-zinc-400">
+      {task.link && (
+        <a 
+          href={task.link} 
+          target="_blank" 
+          rel="noreferrer" 
+          onClick={e => e.stopPropagation()}
+          className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 px-1.5 py-0.5 rounded transition-colors mb-2"
+        >
+          <LinkIcon className="w-3 h-3" />
+          <span className="truncate max-w-[150px] underline decoration-zinc-300 underline-offset-2">
+            {task.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+          </span>
+        </a>
+      )}
+
+      <div className="flex items-center justify-between mt-1">
+        <div className="flex items-center gap-2">
+          {task.priority && !isCompleted && (
+            <span className={`text-[11px] font-medium ${
+              task.priority === 'urgent' ? 'text-red-600' :
+              task.priority === 'high' ? 'text-orange-600' :
+              task.priority === 'medium' ? 'text-zinc-500' :
+              'text-emerald-600'
+            }`}>
+              {task.priority === 'urgent' ? '🔴' : task.priority === 'high' ? '🟠' : task.priority === 'medium' ? '⚪' : '🟢'} {priorityLabels[task.priority]}
+            </span>
+          )}
           {task.dueDate && (
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+            <div className="flex items-center gap-1 text-[11px] text-zinc-500">
+              <Calendar className="w-3 h-3" />
+              <span>{new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
           )}
         </div>
         
-        {/* Status Actions */}
-        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Status Actions (Subtle on hover) */}
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {task.status !== 'todo' && (
             <button 
-              onClick={() => onStatusChange(task.id, 'todo')}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, 'todo'); }}
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded hover:bg-zinc-200 text-zinc-500 transition-colors"
             >
-              To Do
+              Plan
             </button>
           )}
           {task.status !== 'in-progress' && (
             <button 
-              onClick={() => onStatusChange(task.id, 'in-progress')}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, 'in-progress'); }}
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded hover:bg-zinc-200 text-zinc-500 transition-colors"
             >
               Do
             </button>
           )}
           {task.status !== 'done' && (
             <button 
-              onClick={() => onStatusChange(task.id, 'done')}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, 'done'); }}
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded hover:bg-zinc-200 text-zinc-500 transition-colors"
             >
               Done
             </button>
