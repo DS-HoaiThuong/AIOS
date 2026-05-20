@@ -41,7 +41,11 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`🚀 AI Personal OS Backend running on http://localhost:${port}`);
-  console.log(`📡 API endpoints available at http://localhost:${port}/api`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`🚀 AI Personal OS Backend running on http://localhost:${port}`);
+    console.log(`📡 API endpoints available at http://localhost:${port}/api`);
+  });
+}
+
+export default app;
