@@ -71,10 +71,17 @@ export default function FocusBoard() {
   const [customMinutes, setCustomMinutes] = useState('15');
   const [sessionGoal, setSessionGoal] = useState('');
 
-  // Âm thanh
+  // Âm thanh - mỗi sound có volume riêng
   const [selectedSounds, setSelectedSounds] = useState<string[]>([]);
-  const [soundVolume, setSoundVolume] = useState(0.5);
+  const [soundVolumes, setSoundVolumes] = useState<{ [id: string]: number }>({});
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+
+  const getVolume = (id: string) => soundVolumes[id] ?? 0.5;
+
+  const setVolume = (id: string, vol: number) => {
+    setSoundVolumes(prev => ({ ...prev, [id]: vol }));
+    if (audioRefs.current[id]) audioRefs.current[id].volume = vol;
+  };
 
   // YouTube
   const [youtubeInput, setYoutubeInput] = useState('');
@@ -122,20 +129,21 @@ export default function FocusBoard() {
 
   // Ambient sound control
   useEffect(() => {
+    // Dừng và xóa những âm không còn chọn
     Object.keys(audioRefs.current).forEach(id => {
       if (!selectedSounds.includes(id)) {
         audioRefs.current[id].pause();
         delete audioRefs.current[id];
       }
     });
-
+    // Tạo audio mới cho âm vừa thêm
     selectedSounds.forEach(id => {
       if (!audioRefs.current[id]) {
         const sound = AMBIENT_SOUNDS.find(s => s.id === id);
         if (sound?.url) {
           const audio = new Audio(sound.url);
           audio.loop = true;
-          audio.volume = soundVolume;
+          audio.volume = soundVolumes[id] ?? 0.5;
           audio.play().catch(() => {});
           audioRefs.current[id] = audio;
         }
@@ -143,12 +151,7 @@ export default function FocusBoard() {
     });
   }, [selectedSounds]);
 
-  useEffect(() => {
-    Object.values(audioRefs.current).forEach(audio => {
-      audio.volume = soundVolume;
-    });
-  }, [soundVolume]);
-
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       Object.values(audioRefs.current).forEach(audio => audio.pause());
@@ -366,44 +369,75 @@ export default function FocusBoard() {
           </button>
         </div>
 
-        {/* ── AMBIENT SOUND PANEL ── */}
+        {/* ── AMBIENT MIXER PANEL ── */}
         <div className="w-full max-w-sm bg-black/20 rounded-2xl p-4">
+          {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
               <Leaf className="w-4 h-4 text-white/70" />
-              <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Tiếng ambient</span>
+              <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Ambient Mixer</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <VolumeX className="w-3 h-3 text-white/50" />
-              <input
-                type="range" min="0" max="1" step="0.05"
-                value={soundVolume}
-                onChange={e => setSoundVolume(parseFloat(e.target.value))}
-                className="w-20 h-1 accent-white cursor-pointer"
-              />
-              <Volume2 className="w-3 h-3 text-white/50" />
-            </div>
+            {selectedSounds.length > 0 && (
+              <button
+                onClick={() => setSelectedSounds([])}
+                className="text-[10px] text-white/50 hover:text-white/80 font-semibold transition-colors"
+              >Tắt tất cả</button>
+            )}
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            {AMBIENT_SOUNDS.map(sound => (
+
+          {/* Sound Grid - pick buttons */}
+          <div className="grid grid-cols-4 gap-1.5 mb-3">
+            {AMBIENT_SOUNDS.filter(s => s.id !== 'none').map(sound => (
               <button
                 key={sound.id}
                 onClick={() => {
-                  if (sound.id === 'none') {
-                    setSelectedSounds([]);
-                  } else {
-                    setSelectedSounds(prev => prev.includes(sound.id) ? prev.filter(id => id !== sound.id) : [...prev, sound.id]);
-                  }
+                  setSelectedSounds(prev =>
+                    prev.includes(sound.id)
+                      ? prev.filter(id => id !== sound.id)
+                      : [...prev, sound.id]
+                  );
                 }}
                 className={`flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-semibold transition-all
-                  ${(sound.id === 'none' && selectedSounds.length === 0) || selectedSounds.includes(sound.id) ? 'bg-white text-[#4a9985] shadow-md' : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}
+                  ${selectedSounds.includes(sound.id)
+                    ? 'bg-white text-[#4a9985] shadow-md ring-2 ring-white/60'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}
                 `}
               >
                 <span className="text-base leading-none">{sound.emoji}</span>
-                <span className="leading-none">{sound.label}</span>
+                <span className="leading-none text-center">{sound.label}</span>
               </button>
             ))}
           </div>
+
+          {/* Per-track volume sliders */}
+          {selectedSounds.length > 0 && (
+            <div className="flex flex-col gap-2 border-t border-white/10 pt-3">
+              <p className="text-[10px] text-white/50 font-semibold uppercase tracking-wider mb-1">Điều chỉnh âm lượng</p>
+              {selectedSounds.map(id => {
+                const sound = AMBIENT_SOUNDS.find(s => s.id === id);
+                if (!sound) return null;
+                return (
+                  <div key={id} className="flex items-center gap-2">
+                    <span className="text-sm w-5 text-center">{sound.emoji}</span>
+                    <span className="text-[10px] text-white/70 w-16 truncate">{sound.label}</span>
+                    <VolumeX className="w-3 h-3 text-white/30 flex-shrink-0" />
+                    <input
+                      type="range" min="0" max="1" step="0.02"
+                      value={getVolume(id)}
+                      onChange={e => setVolume(id, parseFloat(e.target.value))}
+                      className="flex-1 h-1 accent-white cursor-pointer"
+                    />
+                    <Volume2 className="w-3 h-3 text-white/30 flex-shrink-0" />
+                    <span className="text-[10px] text-white/50 w-6 text-right">{Math.round(getVolume(id) * 100)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedSounds.length === 0 && (
+            <p className="text-center text-[10px] text-white/30 mt-1">Chọn âm thanh để bắt đầu mix 🎧</p>
+          )}
         </div>
       </main>
 
