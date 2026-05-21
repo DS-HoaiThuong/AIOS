@@ -12,25 +12,70 @@ const getGemini = () => {
   return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 };
 
+const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+  let timeout: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(`Timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeout!);
+  }
+};
+
 export const getDashboardSummary = async (req: Request, res: Response) => {
   try {
-    // 1. Tasks
-    const pendingTasksCount = await prisma.task.count({
-      where: { status: { in: ['todo', 'in-progress'] } }
-    });
-    
-    const completedTasksCount = await prisma.task.count({
-      where: { status: 'done' }
-    });
+    const pendingTaskWhere = { status: { in: ['todo', 'in-progress'] } };
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
-    const allPendingTasks = await prisma.task.findMany({
-      where: { status: { in: ['todo', 'in-progress'] } }
-    });
-    
+    const [
+      pendingTasksCount,
+      completedTasksCount,
+      pendingTasks,
+      transactionTotals,
+      habits,
+      totalFocus,
+      todayFocus
+    ] = await Promise.all([
+      prisma.task.count({ where: pendingTaskWhere }),
+      prisma.task.count({ where: { status: 'done' } }),
+      prisma.task.findMany({
+        where: pendingTaskWhere,
+        select: {
+          id: true,
+          title: true,
+          project: true,
+          priority: true,
+          dueDate: true,
+          status: true
+        },
+        orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
+        take: 50
+      }),
+      prisma.transaction.groupBy({
+        by: ['type'],
+        _sum: { amount: true }
+      }),
+      prisma.habit.findMany({ select: { completedDates: true } }),
+      prisma.focusSession.aggregate({
+        where: { completedAt: { not: null } },
+        _sum: { duration: true }
+      }),
+      prisma.focusSession.aggregate({
+        where: {
+          completedAt: { not: null },
+          startedAt: { gte: todayStart }
+        },
+        _sum: { duration: true }
+      })
+    ]);
+
     const priorityWeight: any = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
-    const sortedPriorities = allPendingTasks
+    const sortedPriorities = pendingTasks
       .sort((a, b) => {
-        // 1. Sort by dueDate (earliest first, nulls at the bottom)
         const hasDateA = a.dueDate ? 1 : 0;
         const hasDateB = b.dueDate ? 1 : 0;
         
@@ -44,19 +89,14 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
           return 1;
         }
         
-        // 2. Sort by priority
-        return priorityWeight[b.priority] - priorityWeight[a.priority];
+        return (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
       })
       .slice(0, 3);
 
-    // 2. Finance
-    const transactions = await prisma.transaction.findMany();
-    const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    const income = transactionTotals.find(t => t.type === 'income')?._sum.amount || 0;
+    const expense = transactionTotals.find(t => t.type === 'expense')?._sum.amount || 0;
     const balance = income - expense;
 
-    // 3. Habits
-    const habits = await prisma.habit.findMany();
     const today = new Date().toISOString().split('T')[0];
     let completedHabitsToday = 0;
     habits.forEach(h => {
@@ -64,23 +104,14 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
       if (dates.includes(today)) completedHabitsToday++;
     });
 
-    // 4. Focus Time
-    const focusSessions = await prisma.focusSession.findMany({
-      where: { completedAt: { not: null } }
-    });
-    
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayFocus = focusSessions.filter(s => s.startedAt >= todayStart);
-    const totalFocusMinutesToday = Math.floor(todayFocus.reduce((acc, s) => acc + s.duration, 0) / 60);
-    const totalFocusMinutes = Math.floor(focusSessions.reduce((acc, s) => acc + s.duration, 0) / 60);
+    const totalFocusMinutesToday = Math.floor((todayFocus._sum.duration || 0) / 60);
+    const totalFocusMinutes = Math.floor((totalFocus._sum.duration || 0) / 60);
 
-    // 5. Generate AI Brief via Gemini
     let aiBrief = "You are doing great! Keep up the momentum.";
     try {
       const model = getGemini();
       const prompt = `Act as an AI Personal Assistant. The user has ${pendingTasksCount} pending tasks, completed ${completedTasksCount} tasks, achieved ${completedHabitsToday}/${habits.length} habits today, and focused for ${totalFocusMinutesToday} minutes. Provide a very short, encouraging 2-sentence insight to help them optimize their day. Be specific and motivating.`;
-      const result = await model.generateContent(prompt);
+      const result = await withTimeout(model.generateContent(prompt), 1500);
       aiBrief = result.response.text() || aiBrief;
     } catch (aiError: any) {
       console.error('Failed to generate AI brief, falling back to default.', aiError?.message);

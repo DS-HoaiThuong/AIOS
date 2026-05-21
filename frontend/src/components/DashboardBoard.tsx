@@ -19,17 +19,23 @@ export default function DashboardBoard({ onNavigate }: DashboardBoardProps) {
   useEffect(() => { loadSummary(); }, []);
 
   const loadSummary = async () => {
+    setLoading(true);
     try {
       setError(null);
-      const [data, tasks] = await Promise.all([fetchDashboardSummary(), fetchTasks()]);
+      const data = await fetchDashboardSummary();
       setSummary(data);
-      setAllTasks(tasks);
     } catch (error: any) {
       console.error('Failed to load dashboard summary', error);
       setError('Không thể tải dữ liệu. Kiểm tra backend có đang chạy không.');
     } finally {
       setLoading(false);
     }
+
+    fetchTasks()
+      .then(setAllTasks)
+      .catch((error) => {
+        console.error('Failed to load dashboard tasks', error);
+      });
   };
 
   if (loading) {
