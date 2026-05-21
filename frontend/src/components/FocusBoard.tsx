@@ -27,7 +27,7 @@ const CuteMushroom = ({ className = 'w-16 h-16' }) => (
 
 // ─── Floating Island ─────────────────────────────────────────────────────────
 const FloatingIsland = ({ hasMushroom, isGrowing }: { hasMushroom: boolean; isGrowing?: boolean }) => (
-  <div className="w-20 h-20 relative transform hover:-translate-y-1 transition-transform">
+  <div className="w-28 h-28 relative transform hover:-translate-y-1 transition-transform">
     <svg viewBox="0 0 100 100" className="w-full h-full absolute inset-0">
       <polygon points="50,30 90,50 50,70 10,50" fill="#81C784" />
       <polygon points="50,30 90,50 50,70 10,50" fill="none" stroke="#66BB6A" strokeWidth="1" />
@@ -37,13 +37,13 @@ const FloatingIsland = ({ hasMushroom, isGrowing }: { hasMushroom: boolean; isGr
       <path d="M 50 70 Q 60 58 70 52 Q 80 55 90 50" fill="none" stroke="#4CAF50" strokeWidth="3" strokeLinecap="round" />
     </svg>
     {hasMushroom && (
-      <div className="absolute inset-0 flex items-center justify-center -translate-y-4">
-        <CuteMushroom className="w-10 h-10" />
+      <div className="absolute inset-0 flex items-center justify-center -translate-y-5">
+        <CuteMushroom className="w-14 h-14" />
       </div>
     )}
     {isGrowing && !hasMushroom && (
-      <div className="absolute inset-0 flex items-center justify-center -translate-y-3">
-        <div className="text-lg animate-bounce">🌱</div>
+      <div className="absolute inset-0 flex items-center justify-center -translate-y-4">
+        <div className="text-2xl animate-bounce">🌱</div>
       </div>
     )}
   </div>
@@ -385,8 +385,8 @@ export default function FocusBoard() {
             )}
           </div>
 
-          {/* Sound Grid - pick buttons */}
-          <div className="grid grid-cols-4 gap-1.5 mb-3">
+          {/* Sound Row - horizontal */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {AMBIENT_SOUNDS.filter(s => s.id !== 'none').map(sound => (
               <button
                 key={sound.id}
@@ -397,14 +397,14 @@ export default function FocusBoard() {
                       : [...prev, sound.id]
                   );
                 }}
-                className={`flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-semibold transition-all
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap
                   ${selectedSounds.includes(sound.id)
                     ? 'bg-white text-[#4a9985] shadow-md ring-2 ring-white/60'
                     : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}
                 `}
               >
-                <span className="text-base leading-none">{sound.emoji}</span>
-                <span className="leading-none text-center">{sound.label}</span>
+                <span className="text-sm leading-none">{sound.emoji}</span>
+                <span className="leading-none">{sound.label}</span>
               </button>
             ))}
           </div>
@@ -441,8 +441,8 @@ export default function FocusBoard() {
         </div>
       </main>
 
-      {/* ── RIGHT: FARM + MUSIC ───────────────────────────────── */}
-      <aside className="w-full md:w-[380px] bg-[#FDF5D3] flex flex-col border-l-4 border-[#F0E5B5] overflow-hidden">
+      {/* ── RIGHT: FARM + MUSIC (hidden in fullscreen) ──────── */}
+      <aside className={`w-full md:w-[420px] bg-[#FDF5D3] flex flex-col border-l-4 border-[#F0E5B5] overflow-hidden ${isFullscreen ? 'hidden' : ''}`}>
 
         {/* Farm Header */}
         <div className="text-center pt-5 pb-3 px-6 border-b border-[#F0E5B5]">
@@ -450,9 +450,9 @@ export default function FocusBoard() {
           <p className="text-[#A1887F] text-xs font-medium mt-0.5">Đã thu hoạch: {mushroomCount}/9 🍄</p>
         </div>
 
-        {/* 3×3 Farm Grid */}
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="grid grid-cols-3 gap-2">
+        {/* 3×3 Farm Grid - larger */}
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="grid grid-cols-3 gap-3">
             {farmGrid.map((plot, idx) => (
               <FloatingIsland key={idx} hasMushroom={plot.hasMushroom} isGrowing={plot.isGrowing} />
             ))}
