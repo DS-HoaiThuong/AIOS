@@ -52,12 +52,12 @@ const FloatingIsland = ({ hasMushroom, isGrowing }: { hasMushroom: boolean; isGr
 // ─── Ambient Sounds ───────────────────────────────────────────────────────────
 const AMBIENT_SOUNDS = [
   { id: 'none',    label: 'Không',    emoji: '🔇', url: null },
-  { id: 'rain',    label: 'Mưa rơi', emoji: '🌧️', url: 'https://assets.mixkit.co/active_storage/sfx/212/212-preview.mp3' },
-  { id: 'fire',    label: 'Lửa đốt', emoji: '🔥', url: 'https://assets.mixkit.co/active_storage/sfx/1234/1234-preview.mp3' },
-  { id: 'ocean',   label: 'Sóng biển', emoji: '🌊', url: 'https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3' },
-  { id: 'forest',  label: 'Rừng cây', emoji: '🌲', url: 'https://assets.mixkit.co/active_storage/sfx/2517/2517-preview.mp3' },
-  { id: 'wind',    label: 'Gió thổi', emoji: '💨', url: 'https://assets.mixkit.co/active_storage/sfx/2516/2516-preview.mp3' },
-  { id: 'white',   label: 'White Noise', emoji: '📻', url: 'https://assets.mixkit.co/active_storage/sfx/2520/2520-preview.mp3' },
+  { id: 'rain',    label: 'Mưa rơi', emoji: '🌧️', url: '/sounds/u_aazqidjoaq-rain-sounds-210646.mp3' },
+  { id: 'thunder', label: 'Sấm sét', emoji: '⚡', url: '/sounds/soundreality-thunder-sound-375727.mp3' },
+  { id: 'fire',    label: 'Lửa đốt', emoji: '🔥', url: '/sounds/soundreality-fire-crackling-528620.mp3' },
+  { id: 'ocean',   label: 'Sóng biển', emoji: '🌊', url: '/sounds/kokoreli777-sea-waves-169411.mp3' },
+  { id: 'forest',  label: 'Rừng cây', emoji: '🌲', url: '/sounds/soundreality-forest-nature-322637.mp3' },
+  { id: 'jungle',  label: 'Rừng rậm', emoji: '🌿', url: '/sounds/soul_serenity_sounds-jungle-nature-229896.mp3' },
   { id: 'coffee',  label: 'Quán cà phê', emoji: '☕', url: 'https://assets.mixkit.co/active_storage/sfx/2522/2522-preview.mp3' },
 ];
 
