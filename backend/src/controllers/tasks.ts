@@ -7,9 +7,9 @@ export const getTasks = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
     res.json(tasks);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
+    res.status(500).json({ error: 'Failed to fetch tasks', details: error?.message || String(error) });
   }
 };
 

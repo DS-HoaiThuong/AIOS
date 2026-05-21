@@ -38,6 +38,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     message: 'AI Personal OS API is running',
     version: '1.0.0',
     endpoints: ['/api/tasks', '/api/ai', '/api/finance', '/api/life', '/api/analytics'],
+    debugDbUrl: process.env.DATABASE_URL ? 'Loaded' : 'Missing',
   });
 });
 

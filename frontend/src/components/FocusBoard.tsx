@@ -72,9 +72,9 @@ export default function FocusBoard() {
   const [sessionGoal, setSessionGoal] = useState('');
 
   // Âm thanh
-  const [selectedSound, setSelectedSound] = useState('none');
+  const [selectedSounds, setSelectedSounds] = useState<string[]>([]);
   const [soundVolume, setSoundVolume] = useState(0.5);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
 
   // YouTube
   const [youtubeInput, setYoutubeInput] = useState('');
@@ -122,24 +122,38 @@ export default function FocusBoard() {
 
   // Ambient sound control
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    const sound = AMBIENT_SOUNDS.find(s => s.id === selectedSound);
-    if (sound?.url) {
-      const audio = new Audio(sound.url);
-      audio.loop = true;
-      audio.volume = soundVolume;
-      audio.play().catch(() => {});
-      audioRef.current = audio;
-    }
-    return () => { audioRef.current?.pause(); };
-  }, [selectedSound]);
+    Object.keys(audioRefs.current).forEach(id => {
+      if (!selectedSounds.includes(id)) {
+        audioRefs.current[id].pause();
+        delete audioRefs.current[id];
+      }
+    });
+
+    selectedSounds.forEach(id => {
+      if (!audioRefs.current[id]) {
+        const sound = AMBIENT_SOUNDS.find(s => s.id === id);
+        if (sound?.url) {
+          const audio = new Audio(sound.url);
+          audio.loop = true;
+          audio.volume = soundVolume;
+          audio.play().catch(() => {});
+          audioRefs.current[id] = audio;
+        }
+      }
+    });
+  }, [selectedSounds]);
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = soundVolume;
+    Object.values(audioRefs.current).forEach(audio => {
+      audio.volume = soundVolume;
+    });
   }, [soundVolume]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(audioRefs.current).forEach(audio => audio.pause());
+    };
+  }, []);
 
   // Fullscreen API
   useEffect(() => {
@@ -235,7 +249,7 @@ export default function FocusBoard() {
     isGrowing: i === mushroomCount && isActive,
   }));
 
-  const currentSoundEmoji = AMBIENT_SOUNDS.find(s => s.id === selectedSound)?.emoji || '🔇';
+
 
   return (
     <div
@@ -374,9 +388,15 @@ export default function FocusBoard() {
             {AMBIENT_SOUNDS.map(sound => (
               <button
                 key={sound.id}
-                onClick={() => setSelectedSound(sound.id === selectedSound ? 'none' : sound.id)}
+                onClick={() => {
+                  if (sound.id === 'none') {
+                    setSelectedSounds([]);
+                  } else {
+                    setSelectedSounds(prev => prev.includes(sound.id) ? prev.filter(id => id !== sound.id) : [...prev, sound.id]);
+                  }
+                }}
                 className={`flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-semibold transition-all
-                  ${selectedSound === sound.id ? 'bg-white text-[#4a9985] shadow-md' : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}
+                  ${(sound.id === 'none' && selectedSounds.length === 0) || selectedSounds.includes(sound.id) ? 'bg-white text-[#4a9985] shadow-md' : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}
                 `}
               >
                 <span className="text-base leading-none">{sound.emoji}</span>
