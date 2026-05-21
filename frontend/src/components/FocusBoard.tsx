@@ -27,7 +27,7 @@ const CuteMushroom = ({ className = 'w-16 h-16' }) => (
 
 // ─── Floating Island ─────────────────────────────────────────────────────────
 const FloatingIsland = ({ hasMushroom, isGrowing }: { hasMushroom: boolean; isGrowing?: boolean }) => (
-  <div className="w-28 h-28 relative transform hover:-translate-y-1 transition-transform">
+  <div className="w-16 h-16 relative transform hover:-translate-y-1 transition-transform">
     <svg viewBox="0 0 100 100" className="w-full h-full absolute inset-0">
       <polygon points="50,30 90,50 50,70 10,50" fill="#81C784" />
       <polygon points="50,30 90,50 50,70 10,50" fill="none" stroke="#66BB6A" strokeWidth="1" />
@@ -37,13 +37,13 @@ const FloatingIsland = ({ hasMushroom, isGrowing }: { hasMushroom: boolean; isGr
       <path d="M 50 70 Q 60 58 70 52 Q 80 55 90 50" fill="none" stroke="#4CAF50" strokeWidth="3" strokeLinecap="round" />
     </svg>
     {hasMushroom && (
-      <div className="absolute inset-0 flex items-center justify-center -translate-y-5">
-        <CuteMushroom className="w-14 h-14" />
+      <div className="absolute inset-0 flex items-center justify-center -translate-y-3">
+        <CuteMushroom className="w-8 h-8" />
       </div>
     )}
     {isGrowing && !hasMushroom && (
-      <div className="absolute inset-0 flex items-center justify-center -translate-y-4">
-        <div className="text-2xl animate-bounce">🌱</div>
+      <div className="absolute inset-0 flex items-center justify-center -translate-y-2">
+        <div className="text-sm animate-bounce">🌱</div>
       </div>
     )}
   </div>
@@ -257,28 +257,29 @@ export default function FocusBoard() {
   return (
     <div
       ref={fullscreenRef}
-      className={`w-full h-full flex flex-col md:flex-row overflow-hidden rounded-xl shadow-xl font-sans ${isFullscreen ? 'fixed inset-0 z-[9999] rounded-none' : ''}`}
+      className={`w-full h-full flex flex-col md:flex-row overflow-hidden rounded-xl shadow-2xl font-sans ${isFullscreen ? 'fixed inset-0 z-[9999] rounded-none' : ''}`}
     >
       {/* ── LEFT: TIMER ───────────────────────────────────────── */}
-      <main className="flex-1 bg-gradient-to-br from-[#4a9985] to-[#2d7a63] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <main className="flex-1 bg-gradient-to-br from-[#1a3a2a] via-[#2d6b52] to-[#1e4d3a] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
 
-        {/* Decorative blobs */}
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        {/* Decorative blobs - more dramatic */}
+        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] rounded-full bg-teal-400/10 blur-[80px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-green-400/5 blur-[120px] pointer-events-none" />
 
         {/* Fullscreen button */}
         <button
           onClick={toggleFullscreen}
-          className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors z-10"
+          className="absolute top-4 right-4 p-2.5 rounded-xl bg-white/5 hover:bg-white/15 transition-all z-10 border border-white/10 backdrop-blur-sm"
           title={isFullscreen ? 'Thu nhỏ' : 'Toàn màn hình'}
         >
-          {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          {isFullscreen ? <Minimize2 className="w-5 h-5 text-white/70" /> : <Maximize2 className="w-5 h-5 text-white/70" />}
         </button>
 
-        <h1 className="text-2xl font-bold mb-1 tracking-wide text-white/90">
+        <h1 className="text-xl font-bold mb-1 tracking-wide text-white/80 uppercase">
           {isActive ? '🍄 Đang trồng nấm...' : '🌱 Bắt đầu trồng nấm!'}
         </h1>
-        <p className="text-white/60 text-sm mb-4">Tập trung để ươm mầm một cây nấm mới</p>
+        <p className="text-white/40 text-xs mb-4 tracking-wider">Tập trung để ươm mầm một cây nấm mới</p>
 
         {/* Session Goal */}
         {!isActive ? (
@@ -299,13 +300,13 @@ export default function FocusBoard() {
         ) : null}
 
         {/* Mode Selector */}
-        <div className="flex items-center gap-1 mb-6 bg-black/20 p-1 rounded-full">
+        <div className="flex items-center gap-1 mb-6 bg-white/5 backdrop-blur-xl p-1 rounded-full border border-white/10">
           {([['pomodoro','🍅 25m'], ['deepwork','🧠 50m'], ['short_break','☕ 5m'], ['custom','⚙️']] as const).map(([m, label]) => (
             <button
               key={m}
               onClick={() => setMode(m)}
               disabled={isActive}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${mode === m ? 'bg-white text-[#4a9985] shadow-md' : 'text-white/70 hover:text-white'} ${isActive ? 'opacity-40 cursor-not-allowed' : ''}`}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${mode === m ? 'bg-white text-[#1a3a2a] shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/10'} ${isActive ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
               {label}
             </button>
@@ -324,68 +325,77 @@ export default function FocusBoard() {
           </div>
         )}
 
-        {/* Timer Circle */}
-        <div className="relative flex items-center justify-center mb-6">
-          <svg className="w-56 h-56 transform -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r={radius} fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
+        {/* Timer Circle - HERO element */}
+        <div className="relative flex items-center justify-center mb-8">
+          {/* Glow ring behind */}
+          <div className="absolute w-80 h-80 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
+          <svg className={`${isFullscreen ? 'w-80 h-80' : 'w-72 h-72'} transform -rotate-90 relative z-10 transition-all duration-500`} viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r={radius} fill="rgba(0,0,0,0.3)" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
             <circle
               cx="50" cy="50" r={radius}
               fill="transparent"
-              stroke="#A3D95D"
-              strokeWidth="5"
+              stroke="url(#timerGradient)"
+              strokeWidth="4.5"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               className="transition-all duration-1000 ease-linear"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(163,217,93,0.4))' }}
             />
+            <defs>
+              <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#A3D95D" />
+                <stop offset="100%" stopColor="#4ADE80" />
+              </linearGradient>
+            </defs>
           </svg>
-          <div className="absolute flex flex-col items-center justify-center">
+          <div className="absolute flex flex-col items-center justify-center z-20">
             <div
               className="relative mb-1 transition-transform duration-1000"
               style={{ transform: `scale(${isActive ? 1 - (timeLeft / totalTime) * 0.3 : 1})` }}
             >
-              <CuteMushroom className={`w-20 h-20 ${isActive ? 'animate-pulse' : ''}`} />
+              <CuteMushroom className={`${isFullscreen ? 'w-28 h-28' : 'w-24 h-24'} transition-all duration-500 ${isActive ? 'animate-pulse' : ''}`} />
             </div>
           </div>
         </div>
 
-        <div className="text-5xl font-black tracking-widest text-white mb-6 drop-shadow-lg">
+        <div className={`${isFullscreen ? 'text-7xl' : 'text-6xl'} font-black tracking-widest text-white mb-8 drop-shadow-lg transition-all duration-500`} style={{ fontVariantNumeric: 'tabular-nums' }}>
           {formatTime(timeLeft)}
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-4 mb-8">
           {!isActive ? (
-            <button onClick={handleStart} className="w-14 h-14 rounded-full bg-white text-[#4a9985] flex items-center justify-center hover:scale-105 transition-transform shadow-lg border-b-4 border-black/10 active:border-b-0 active:translate-y-1">
-              <Play className="w-6 h-6 ml-0.5" fill="currentColor" />
+            <button onClick={handleStart} className="w-16 h-16 rounded-full bg-gradient-to-br from-white to-gray-100 text-[#1a3a2a] flex items-center justify-center hover:scale-110 transition-all shadow-xl shadow-black/20 active:scale-95">
+              <Play className="w-7 h-7 ml-0.5" fill="currentColor" />
             </button>
           ) : (
-            <button onClick={handlePause} className="w-14 h-14 rounded-full bg-white text-[#4a9985] flex items-center justify-center hover:scale-105 transition-transform shadow-lg border-b-4 border-black/10 active:border-b-0 active:translate-y-1">
-              <Pause className="w-6 h-6" fill="currentColor" />
+            <button onClick={handlePause} className="w-16 h-16 rounded-full bg-gradient-to-br from-white to-gray-100 text-[#1a3a2a] flex items-center justify-center hover:scale-110 transition-all shadow-xl shadow-black/20 active:scale-95">
+              <Pause className="w-7 h-7" fill="currentColor" />
             </button>
           )}
-          <button onClick={handleSkip} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+          <button onClick={handleSkip} className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white flex items-center justify-center transition-all border border-white/10">
             <SkipForward className="w-4 h-4" />
           </button>
         </div>
 
         {/* ── AMBIENT MIXER PANEL ── */}
-        <div className="w-full max-w-sm bg-black/20 rounded-2xl p-4">
+        <div className={`w-full ${isFullscreen ? 'max-w-xl' : 'max-w-sm'} bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10 transition-all duration-500`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
-              <Leaf className="w-4 h-4 text-white/70" />
-              <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Ambient Mixer</span>
+              <Leaf className="w-3.5 h-3.5 text-emerald-300/70" />
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.15em]">Ambient Mixer</span>
             </div>
             {selectedSounds.length > 0 && (
               <button
                 onClick={() => setSelectedSounds([])}
-                className="text-[10px] text-white/50 hover:text-white/80 font-semibold transition-colors"
+                className="text-[10px] text-white/40 hover:text-white/70 font-medium transition-colors"
               >Tắt tất cả</button>
             )}
           </div>
 
-          {/* Sound Row - horizontal */}
+          {/* Sound Row - horizontal pills */}
           <div className="flex flex-wrap gap-1.5 mb-3">
             {AMBIENT_SOUNDS.filter(s => s.id !== 'none').map(sound => (
               <button
@@ -399,8 +409,8 @@ export default function FocusBoard() {
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap
                   ${selectedSounds.includes(sound.id)
-                    ? 'bg-white text-[#4a9985] shadow-md ring-2 ring-white/60'
-                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'}
+                    ? 'bg-emerald-400/90 text-[#0f2a1d] shadow-lg shadow-emerald-500/20'
+                    : 'bg-white/8 text-white/50 hover:bg-white/15 hover:text-white/80 border border-white/5'}
                 `}
               >
                 <span className="text-sm leading-none">{sound.emoji}</span>
@@ -411,24 +421,24 @@ export default function FocusBoard() {
 
           {/* Per-track volume sliders */}
           {selectedSounds.length > 0 && (
-            <div className="flex flex-col gap-2 border-t border-white/10 pt-3">
-              <p className="text-[10px] text-white/50 font-semibold uppercase tracking-wider mb-1">Điều chỉnh âm lượng</p>
+            <div className="flex flex-col gap-2 border-t border-white/5 pt-3">
+              <p className="text-[9px] text-white/30 font-semibold uppercase tracking-[0.15em] mb-1">Điều chỉnh âm lượng</p>
               {selectedSounds.map(id => {
                 const sound = AMBIENT_SOUNDS.find(s => s.id === id);
                 if (!sound) return null;
                 return (
                   <div key={id} className="flex items-center gap-2">
                     <span className="text-sm w-5 text-center">{sound.emoji}</span>
-                    <span className="text-[10px] text-white/70 w-16 truncate">{sound.label}</span>
-                    <VolumeX className="w-3 h-3 text-white/30 flex-shrink-0" />
+                    <span className="text-[10px] text-white/50 w-16 truncate">{sound.label}</span>
+                    <VolumeX className="w-3 h-3 text-white/20 flex-shrink-0" />
                     <input
                       type="range" min="0" max="1" step="0.02"
                       value={getVolume(id)}
                       onChange={e => setVolume(id, parseFloat(e.target.value))}
-                      className="flex-1 h-1 accent-white cursor-pointer"
+                      className="flex-1 h-1 accent-emerald-400 cursor-pointer"
                     />
-                    <Volume2 className="w-3 h-3 text-white/30 flex-shrink-0" />
-                    <span className="text-[10px] text-white/50 w-6 text-right">{Math.round(getVolume(id) * 100)}</span>
+                    <Volume2 className="w-3 h-3 text-white/20 flex-shrink-0" />
+                    <span className="text-[10px] text-white/40 w-6 text-right font-mono">{Math.round(getVolume(id) * 100)}</span>
                   </div>
                 );
               })}
@@ -436,23 +446,23 @@ export default function FocusBoard() {
           )}
 
           {selectedSounds.length === 0 && (
-            <p className="text-center text-[10px] text-white/30 mt-1">Chọn âm thanh để bắt đầu mix 🎧</p>
+            <p className="text-center text-[10px] text-white/20 mt-1">Chọn âm thanh để bắt đầu mix 🎧</p>
           )}
         </div>
       </main>
 
       {/* ── RIGHT: FARM + MUSIC (hidden in fullscreen) ──────── */}
-      <aside className={`w-full md:w-[420px] bg-[#FDF5D3] flex flex-col border-l-4 border-[#F0E5B5] overflow-hidden ${isFullscreen ? 'hidden' : ''}`}>
+      <aside className={`w-full md:w-[300px] bg-[#FDF5D3] flex flex-col border-l-2 border-[#F0E5B5] overflow-hidden transition-all duration-500 ${isFullscreen ? 'hidden' : ''}`}>
 
         {/* Farm Header */}
-        <div className="text-center pt-5 pb-3 px-6 border-b border-[#F0E5B5]">
-          <h2 className="text-xl font-bold text-[#8D6E63]">🌾 Nông Trại Nấm</h2>
-          <p className="text-[#A1887F] text-xs font-medium mt-0.5">Đã thu hoạch: {mushroomCount}/9 🍄</p>
+        <div className="text-center pt-4 pb-2 px-4 border-b border-[#F0E5B5]">
+          <h2 className="text-base font-bold text-[#8D6E63]">🌾 Nông Trại Nấm</h2>
+          <p className="text-[#A1887F] text-[10px] font-medium mt-0.5">Đã thu hoạch: {mushroomCount}/9 🍄</p>
         </div>
 
-        {/* 3×3 Farm Grid - larger */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="grid grid-cols-3 gap-3">
+        {/* 3×3 Farm Grid - compact */}
+        <div className="flex-1 flex items-center justify-center p-3">
+          <div className="grid grid-cols-3 gap-1.5">
             {farmGrid.map((plot, idx) => (
               <FloatingIsland key={idx} hasMushroom={plot.hasMushroom} isGrowing={plot.isGrowing} />
             ))}
