@@ -126,7 +126,7 @@ export default function Home() {
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4">
               <BrainCircuit className="w-12 h-12 opacity-20" />
-              <p>Module "{activeTab}" is currently under construction.</p>
+              <p>Module &quot;{activeTab}&quot; is currently under construction.</p>
             </div>
           )}
         </div>

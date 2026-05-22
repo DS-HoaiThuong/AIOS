@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchFocusSessions, startFocusSession, completeFocusSession } from '../lib/api';
-import { Play, Pause, SkipForward, Music, Maximize2, Minimize2, Volume2, VolumeX, Youtube, Leaf } from 'lucide-react';
+import { Play, Pause, SkipForward, Music, Maximize2, Minimize2, Volume2, VolumeX, SquarePlay, Leaf } from 'lucide-react';
 
 type FocusMode = 'pomodoro' | 'deepwork' | 'short_break' | 'custom';
 
@@ -507,7 +507,7 @@ export default function FocusBoard() {
           ) : (
             <div className="bg-white rounded-xl border border-[#F0E5B5] p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Youtube className="w-4 h-4 text-red-500" />
+                <SquarePlay className="w-4 h-4 text-red-500" />
                 <span className="text-xs font-bold text-[#8D6E63]">YouTube / Playlist</span>
               </div>
               <p className="text-[10px] text-[#A1887F] mb-2 leading-relaxed">

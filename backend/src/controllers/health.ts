@@ -1,10 +1,15 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
+const getLocalDateKey = (date = new Date()) => {
+  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return offsetDate.toISOString().split('T')[0];
+};
+
 // GET /api/health/today
 export const getTodayHealth = async (req: Request, res: Response) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateKey();
     const log = await prisma.healthLog.findUnique({ where: { date: today } });
     res.json(log || { date: today, sleepHours: null, waterGlasses: 0, exercised: false, energyLevel: null, notes: null });
   } catch (error) {
@@ -15,7 +20,7 @@ export const getTodayHealth = async (req: Request, res: Response) => {
 // POST /api/health/today  (upsert)
 export const upsertTodayHealth = async (req: Request, res: Response) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateKey();
     const { sleepHours, waterGlasses, exercised, energyLevel, notes } = req.body;
 
     const log = await prisma.healthLog.upsert({
@@ -50,7 +55,7 @@ export const getWeekHealth = async (req: Request, res: Response) => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      dates.push(d.toISOString().split('T')[0]);
+      dates.push(getLocalDateKey(d));
     }
     const logs = await prisma.healthLog.findMany({ where: { date: { in: dates } } });
     const byDate: Record<string, any> = {};

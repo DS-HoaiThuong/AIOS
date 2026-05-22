@@ -13,7 +13,7 @@ import healthRoutes from './routes/health';
 dotenv.config();
 
 const app = express();
-const port = 5001;
+const port = Number(process.env.PORT) || 5001;
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -38,7 +38,6 @@ app.get('/api/health', (req: Request, res: Response) => {
     message: 'AI Personal OS API is running',
     version: '1.0.0',
     endpoints: ['/api/tasks', '/api/ai', '/api/finance', '/api/life', '/api/analytics'],
-    debugDbUrl: process.env.DATABASE_URL ? 'Loaded' : 'Missing',
   });
 });
 

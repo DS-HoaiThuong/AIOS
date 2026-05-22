@@ -2,42 +2,41 @@
 set -e
 
 echo ""
-echo "╔══════════════════════════════════════════╗"
-echo "║     AI Personal OS - Setup & Launch      ║"
-echo "╚══════════════════════════════════════════╝"
+echo "AI Personal OS - Setup & Launch"
 echo ""
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
+BACKEND_PORT="${PORT:-5001}"
+FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 
-# Check Node
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js not found. Install from https://nodejs.org"
-    exit 1
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js not found. Install it from https://nodejs.org"
+  exit 1
 fi
-echo "✅ Node $(node -v) | npm $(npm -v)"
 
-# Backend
-echo ""
-echo "📦 [1/2] Installing Backend..."
-cd "$DIR/backend" && npm install --silent
-echo "✅ Backend ready"
+echo "Node $(node -v) | npm $(npm -v)"
 
-# Frontend
 echo ""
-echo "📦 [2/2] Installing Frontend..."
-cd "$DIR/frontend" && npm install --silent
-echo "✅ Frontend ready"
+echo "[1/2] Installing backend dependencies..."
+cd "$DIR/backend"
+npm install --silent
+echo "Backend ready"
 
-# Launch
 echo ""
-echo "🚀 Launching..."
-echo "   Backend  → http://localhost:5001"
-echo "   Frontend → http://localhost:3000"
-echo "   Press Ctrl+C to stop."
+echo "[2/2] Installing frontend dependencies..."
+cd "$DIR/frontend"
+npm install --silent
+echo "Frontend ready"
+
+echo ""
+echo "Launching..."
+echo "Backend  -> http://localhost:${BACKEND_PORT}"
+echo "Frontend -> http://localhost:${FRONTEND_PORT}"
+echo "Press Ctrl+C to stop."
 echo ""
 
-cd "$DIR/backend" && npx ts-node src/index.ts &
-cd "$DIR/frontend" && npx next dev &
+cd "$DIR/backend" && PORT="$BACKEND_PORT" npx ts-node src/index.ts &
+cd "$DIR/frontend" && npx next dev -p "$FRONTEND_PORT" &
 
 trap "kill %1 %2 2>/dev/null; exit 0" INT TERM
 wait
