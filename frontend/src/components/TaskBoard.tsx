@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchTasks, createTask, updateTask, deleteTask, autoScheduleTasks, generateProjectTasks, deleteProject } from '../lib/api';
+import { generateProjectTasksAI } from '../lib/gemini';
 import { Plus, Loader2, Sparkles, ChevronDown, X, Wand2, FolderKanban, CheckCircle2, AlertCircle, Trash2, ListTodo, Columns3, Calendar, LayoutGrid, LayoutTemplate, Filter, ArrowUpDown, Search, ChevronRight } from 'lucide-react';
 import TaskItem from './TaskItem';
 
@@ -214,13 +215,32 @@ export default function TaskBoard() {
     setGenerationError('');
 
     try {
-      const data = await generateProjectTasks(aiGoal, aiProjectName);
-      setGenerationResult({ summary: data.projectSummary, count: data.tasks?.length || 0 });
-      // Add to state & switch to the new project
-      setTasks(prev => [...data.tasks, ...prev]);
+      const generatedTasks = await generateProjectTasksAI(aiProjectName, aiGoal);
+      
+      const newTasks = [];
+      for (const t of generatedTasks) {
+        const priorityStr = t.priority ? t.priority.toLowerCase() : 'medium';
+        const priority = ['high', 'medium', 'low'].includes(priorityStr) ? priorityStr : 'medium';
+        const daysMatch = t.estimatedTime?.match(/\\d+/);
+        const days = daysMatch ? parseInt(daysMatch[0]) : 0;
+        const dueDate = days > 0 ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString() : null;
+        
+        const created = await createTask({
+          title: t.title || 'Untitled',
+          description: t.description || '',
+          priority,
+          status: 'todo',
+          project: aiProjectName,
+          dueDate
+        });
+        newTasks.push(created);
+      }
+
+      setGenerationResult({ summary: "Đã tạo các công việc thành công!", count: newTasks.length });
+      setTasks(prev => [...newTasks, ...prev]);
       setActiveProject(aiProjectName);
     } catch (err: any) {
-      setGenerationError(err?.response?.data?.error || 'AI generation failed. Please try again.');
+      setGenerationError(err?.message || 'AI generation failed. Please try again.');
     } finally {
       setIsGenerating(false);
     }
