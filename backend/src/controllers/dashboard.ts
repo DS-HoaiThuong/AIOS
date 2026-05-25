@@ -111,7 +111,7 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     try {
       const model = getGemini();
       const prompt = `Act as an AI Personal Assistant. The user has ${pendingTasksCount} pending tasks, completed ${completedTasksCount} tasks, achieved ${completedHabitsToday}/${habits.length} habits today, and focused for ${totalFocusMinutesToday} minutes. Provide a very short, encouraging 2-sentence insight to help them optimize their day. Be specific and motivating.`;
-      const result = await withTimeout(model.generateContent(prompt), 1500);
+      const result = await withTimeout(model.generateContent(prompt), 5000);
       aiBrief = result.response.text() || aiBrief;
     } catch (aiError: any) {
       console.error('Failed to generate AI brief, falling back to default.', aiError?.message);
