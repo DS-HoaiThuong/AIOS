@@ -41,6 +41,15 @@ export default function TaskBoard() {
 
   useEffect(() => {
     loadTasks();
+    
+    const handleProjectCreated = () => {
+      loadTasks();
+    };
+    window.addEventListener('aios-project-created', handleProjectCreated);
+    
+    return () => {
+      window.removeEventListener('aios-project-created', handleProjectCreated);
+    };
   }, []);
 
   // Close dropdown when clicking outside

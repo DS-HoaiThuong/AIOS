@@ -161,3 +161,8 @@ export const fetchHealthWeek = async () => {
   const response = await api.get('/health/week');
   return response.data;
 };
+
+export const processVoiceCommand = async (text: string) => {
+  const response = await api.post('/ai/command', { text });
+  return response.data;
+};
