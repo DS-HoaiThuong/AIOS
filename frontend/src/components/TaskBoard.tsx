@@ -217,7 +217,7 @@ export default function TaskBoard() {
     try {
       const generatedTasks = await generateProjectTasksAI(aiProjectName, aiGoal);
       
-      const newTasks = [];
+      const newTasks: any[] = [];
       for (const t of generatedTasks) {
         const priorityStr = t.priority ? t.priority.toLowerCase() : 'medium';
         const priority = ['high', 'medium', 'low'].includes(priorityStr) ? priorityStr : 'medium';
