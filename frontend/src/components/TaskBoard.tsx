@@ -40,6 +40,54 @@ export default function TaskBoard() {
   const goalInputRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  async function callAIWithRetry(prompt: string, maxRetries = 3) {
+    const models = [
+      "claude-sonnet-4-6",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro"
+    ];
+
+    for (const model of models) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const res = await fetch("/api/generate-tasks", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model,
+              prompt
+            })
+          });
+
+          if (res.status === 503) {
+            console.warn(`Model ${model} overloaded. Retry ${attempt}`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 1500));
+            continue;
+          }
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText);
+          }
+
+          return await res.json();
+        } catch (error) {
+          console.error(`Error with model ${model}:`, error);
+
+          if (attempt === maxRetries) {
+            break;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, attempt * 1500));
+        }
+      }
+    }
+
+    throw new Error("AI is currently overloaded. Please try again later.");
+  }
+
   useEffect(() => {
     loadTasks();
     
@@ -215,13 +263,31 @@ export default function TaskBoard() {
     setGenerationError('');
 
     try {
-      const generatedTasks = await generateProjectTasksAI(aiProjectName, aiGoal);
+      const prompt = `
+Phân rã dự án sau thành 5-8 task cụ thể.
+
+Tên dự án: ${aiProjectName}
+Mục tiêu: ${aiGoal}
+
+Trả về JSON:
+[
+  {
+    "title": "Tên task",
+    "description": "Mô tả",
+    "priority": "High | Medium | Low",
+    "status": "Todo",
+    "estimatedTime": "Thời gian dự kiến"
+  }
+]
+`;
+
+      const generatedTasks = await callAIWithRetry(prompt);
       
       const newTasks: any[] = [];
       for (const t of generatedTasks) {
         const priorityStr = t.priority ? t.priority.toLowerCase() : 'medium';
         const priority = ['high', 'medium', 'low'].includes(priorityStr) ? priorityStr : 'medium';
-        const daysMatch = t.estimatedTime?.match(/\\d+/);
+        const daysMatch = String(t.estimatedTime || '').match(/\d+/);
         const days = daysMatch ? parseInt(daysMatch[0]) : 0;
         const dueDate = days > 0 ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString() : null;
         
