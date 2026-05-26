@@ -46,7 +46,7 @@ export const createTask = async (req: Request, res: Response) => {
     res.status(201).json(newTask);
   } catch (error) {
     console.error('Error creating task:', error);
-    res.status(500).json({ error: 'Failed to create task' });
+    res.status(500).json({ error: 'Failed to create task', details: error?.message || String(error) });
   }
 };
 
