@@ -25,7 +25,8 @@ export const deleteTask = (id: string) =>
   apiFetch(`/tasks/${id}`, { method: 'DELETE' });
 
 // Finance API
-export const fetchTransactions = () => apiFetch('/finance/transactions');
+export const fetchTransactions = (month?: string) =>
+  apiFetch(`/finance/transactions${month ? `?month=${month}` : ''}`);
 
 export const createTransaction = (data: any) =>
   apiFetch('/finance/transactions', { method: 'POST', body: JSON.stringify(data) });
@@ -45,6 +46,16 @@ export const fetchSubscriptions = () => apiFetch('/finance/subscriptions');
 
 export const createSubscription = (data: any) =>
   apiFetch('/finance/subscriptions', { method: 'POST', body: JSON.stringify(data) });
+
+// Budget API
+export const fetchBudgetItems = (month: string) =>
+  apiFetch(`/finance/budget?month=${month}`);
+
+export const createBudgetItem = (data: any) =>
+  apiFetch('/finance/budget', { method: 'POST', body: JSON.stringify(data) });
+
+export const deleteBudgetItem = (id: string) =>
+  apiFetch(`/finance/budget/${id}`, { method: 'DELETE' });
 
 // Life API
 export const fetchHabits = () => apiFetch('/life/habits');

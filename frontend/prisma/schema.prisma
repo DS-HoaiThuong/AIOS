@@ -100,3 +100,14 @@ model HealthLog {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+model BudgetItem {
+  id          String   @id @default(cuid())
+  title       String
+  amount      Float
+  type        String   // 'expected-income', 'expected-expense'
+  month       String   // 'YYYY-MM' format
+  isRecurring Boolean  @default(false)
+  category    String   @default("Khác")
+  createdAt   DateTime @default(now())
+}

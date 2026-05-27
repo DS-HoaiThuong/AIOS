@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const transactions = await prisma.transaction.findMany({ orderBy: { date: 'desc' } });
+    const { searchParams } = new URL(req.url);
+    const month = searchParams.get('month'); // format: YYYY-MM
+
+    const where: any = {};
+    if (month) {
+      const startDate = new Date(`${month}-01T00:00:00.000Z`);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      where.date = { gte: startDate, lt: endDate };
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where,
+      orderBy: { date: 'desc' },
+    });
     return NextResponse.json(transactions);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
