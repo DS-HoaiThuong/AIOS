@@ -3,7 +3,8 @@ import {
   fetchTransactions, createTransaction, deleteTransaction,
   fetchGoals, createGoal, updateGoal,
   fetchSubscriptions, createSubscription,
-  fetchBudgetItems, createBudgetItem, deleteBudgetItem
+  fetchBudgetItems, createBudgetItem, deleteBudgetItem,
+  fetchJars, createJar, deleteJar, spendFromJar
 } from '../lib/api';
 import {
   Sparkles, TrendingUp, TrendingDown, Plus, Terminal, Cloud, Brain,
@@ -14,7 +15,14 @@ import {
 
 const CATEGORIES = ['Ăn uống', 'Di chuyển', 'Mua sắm', 'Sức khỏe', 'Giải trí', 'Học tập', 'Lương', 'Đầu tư', 'Freelance', 'Khác'];
 
+const JAR_ICONS = ['🏦', '🍜', '⛽', '🛒', '☕', '🎮', '📚', '🏥', '🎁', '💡', '🏠', '👕'];
+
 // ─── Format helpers ───
+const formatCompactVND = (amount: number) => {
+  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}tr`;
+  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}k`;
+  return `${amount}`;
+};
 const formatVND = (amount: number) => {
   if (amount === 0) return '0 ₫';
   const abs = Math.abs(amount);
@@ -81,10 +89,23 @@ export default function FinanceBoard() {
   const [goals, setGoals] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [budgetItems, setBudgetItems] = useState<any[]>([]);
+  const [jars, setJars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal
-  const [modalType, setModalType] = useState<'transaction' | 'goal' | 'subscription' | 'budget' | null>(null);
+  const [modalType, setModalType] = useState<'transaction' | 'goal' | 'subscription' | 'budget' | 'jar' | null>(null);
+
+  // Jar form states
+  const [jarTitle, setJarTitle] = useState('');
+  const [jarBudget, setJarBudget] = useState('');
+  const [jarIcon, setJarIcon] = useState('🏦');
+  const [jarDays, setJarDays] = useState('30');
+  const [jarColor, setJarColor] = useState('#10b981');
+  const [jarStartDate, setJarStartDate] = useState('');
+
+  // Spend popup state
+  const [spendingJarId, setSpendingJarId] = useState<string | null>(null);
+  const [spendAmount, setSpendAmount] = useState('');
 
   // Transaction form
   const [txTitle, setTxTitle] = useState('');
@@ -124,16 +145,18 @@ export default function FinanceBoard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [txData, goalData, subData, budgetData] = await Promise.all([
+      const [txData, goalData, subData, budgetData, jarData] = await Promise.all([
         fetchTransactions(monthKey),
         fetchGoals(),
         fetchSubscriptions(),
         fetchBudgetItems(monthKey),
+        fetchJars()
       ]);
       setTransactions(txData);
       setGoals(goalData);
       setSubscriptions(subData);
       setBudgetItems(budgetData);
+      setJars(jarData);
     } catch (error) {
       console.error('Failed to load finance data', error);
     } finally {
@@ -256,6 +279,81 @@ export default function FinanceBoard() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  // ─── Jar Handlers & Logic ───
+  const handleCreateJar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jarTitle || !jarBudget) return;
+    try {
+      const now = new Date();
+      const defaultStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const newJar = await createJar({
+        title: jarTitle,
+        icon: jarIcon,
+        monthlyBudget: parseMoneyInput(jarBudget),
+        startDate: jarStartDate || defaultStart,
+        daysInPeriod: parseInt(jarDays) || 30,
+        color: jarColor,
+      });
+      setJars([newJar, ...jars]);
+      setModalType(null);
+      setJarTitle(''); setJarBudget(''); setJarIcon('🏦'); setJarDays('30'); setJarColor('#10b981'); setJarStartDate('');
+    } catch (error) {
+      console.error(error);
+      alert('Lỗi khi tạo hủ chi tiêu');
+    }
+  };
+
+  const handleDeleteJar = async (id: string) => {
+    if (!window.confirm('Xóa hủ chi tiêu này?')) return;
+    try {
+      await deleteJar(id);
+      setJars(jars.filter(j => j.id !== id));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSpendFromJar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!spendingJarId || !spendAmount) return;
+    try {
+      const updated = await spendFromJar(spendingJarId, parseMoneyInput(spendAmount));
+      setJars(jars.map(j => j.id === updated.id ? updated : j));
+      setSpendingJarId(null);
+      setSpendAmount('');
+    } catch (error) {
+      console.error(error);
+      alert('Lỗi khi ghi chi tiêu');
+    }
+  };
+
+  const getJarStats = (jar: any) => {
+    const spending: Record<string, number> = JSON.parse(jar.dailySpending || '{}');
+    const today = new Date().toISOString().split('T')[0];
+    const dailyAllowance = jar.monthlyBudget / jar.daysInPeriod;
+    const spentToday = spending[today] || 0;
+    const totalSpent = Object.values(spending).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0);
+    const remaining = jar.monthlyBudget - totalSpent;
+
+    const start = new Date(jar.startDate + 'T00:00:00');
+    const now = new Date();
+    const daysPassed = Math.max(1, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+    const monthPercent = (totalSpent / jar.monthlyBudget) * 100;
+    const dayPercent = (spentToday / dailyAllowance) * 100;
+    let status: 'good' | 'warning' | 'danger' = 'good';
+    if (monthPercent > 100 || dayPercent > 120) status = 'danger';
+    else if (monthPercent > 80 || dayPercent > 90) status = 'warning';
+
+    return { dailyAllowance, spentToday, totalSpent, remaining, daysPassed, monthPercent, dayPercent, status };
+  };
+
+  const statusColors = {
+    good: { bg: 'bg-emerald-50/30', text: 'text-emerald-600', border: 'border-emerald-100', label: '✅ Trong ngân sách' },
+    warning: { bg: 'bg-amber-50/50', text: 'text-amber-600', border: 'border-amber-200', label: '⚠️ Sắp hết' },
+    danger: { bg: 'bg-red-50/50', text: 'text-red-600', border: 'border-red-200', label: '🔴 Vượt ngân sách' },
   };
 
   // ─── Computed ───
@@ -789,6 +887,164 @@ export default function FinanceBoard() {
         </div>
       </div>
 
+      {/* ═══ Spending Jars Section ═══ */}
+      <div className="bg-white border border-[#e5e5e5] rounded-2xl p-6 mt-6">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-50 flex items-center justify-center shadow-sm">
+              <PiggyBank className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="text-[20px] leading-[1.4] tracking-[-0.01em] font-semibold text-[#000000]">
+                Hủ chi tiêu
+              </h3>
+              <p className="text-[12px] text-[#aaa]">
+                {jars.length > 0 ? `${jars.length} hủ đang hoạt động` : 'Quản lý ngân sách hàng ngày'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setModalType('jar')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-[12px] font-medium hover:bg-emerald-700 transition-all shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" /> Tạo hủ mới
+          </button>
+        </div>
+
+        {jars.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-[#e5e5e5] rounded-xl">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
+              <span className="text-2xl">🏦</span>
+            </div>
+            <p className="text-[14px] font-semibold text-[#333]">Chưa có hủ chi tiêu nào</p>
+            <p className="text-[12px] text-[#999] mt-1 max-w-xs mx-auto">Tạo hủ để chia ngân sách tháng ra theo ngày, ví dụ: Tiền ăn 3tr/tháng → 100k/ngày</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {jars.map((jar: any) => {
+              const stats = getJarStats(jar);
+              const sc = statusColors[stats.status];
+
+              return (
+                <div
+                  key={jar.id}
+                  className={`group relative rounded-2xl p-5 border transition-all hover:shadow-md ${sc.border} ${sc.bg}`}
+                >
+                  <button
+                    onClick={() => handleDeleteJar(jar.id)}
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm bg-white border border-[#e5e5e5]">
+                      {jar.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[14px] font-bold text-[#111] truncate">{jar.title}</h4>
+                      <span className={`text-[11px] font-semibold ${sc.text}`}>{sc.label}</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <div className="flex justify-between items-baseline mb-1.5">
+                      <span className="text-[11px] font-semibold text-[#888] uppercase tracking-wider">Hôm nay</span>
+                      <span className="text-[12px] font-bold tabular-nums text-[#333]">
+                        {formatCompactVND(stats.spentToday)} <span className="text-[#bbb] font-normal">/ {formatCompactVND(stats.dailyAllowance)}</span>
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full overflow-hidden bg-white shadow-inner">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${Math.min(100, stats.dayPercent)}%`,
+                          background: stats.dayPercent > 100 ? '#ef4444' : stats.dayPercent > 80 ? '#f59e0b' : jar.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex justify-between items-baseline mb-1.5">
+                      <span className="text-[11px] font-semibold text-[#888] uppercase tracking-wider">Tháng này</span>
+                      <span className="text-[12px] font-bold tabular-nums text-[#333]">
+                        {formatCompactVND(stats.totalSpent)} <span className="text-[#bbb] font-normal">/ {formatCompactVND(jar.monthlyBudget)}</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full overflow-hidden bg-white shadow-inner">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${Math.min(100, stats.monthPercent)}%`,
+                          background: stats.monthPercent > 100 ? '#ef4444' : stats.monthPercent > 80 ? '#f59e0b' : jar.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] text-[#888]">
+                      Còn lại: <span className={`font-bold tabular-nums ${stats.remaining < 0 ? 'text-red-500' : 'text-[#333]'}`}>{formatVND(Math.max(0, stats.remaining))}</span>
+                    </div>
+                    <button
+                      onClick={() => setSpendingJarId(jar.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all shadow-sm hover:opacity-90"
+                      style={{ background: jar.color, color: '#fff' }}
+                    >
+                      <Wallet className="w-3 h-3" /> Ghi chi
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ============= SPEND POPUP ============= */}
+      {spendingJarId && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSpendingJarId(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-[#e5e5e5] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-[#f0f0f0] flex justify-between items-center bg-emerald-50">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-[16px] font-semibold text-[#111]">Ghi chi tiêu</h3>
+              </div>
+              <button onClick={() => setSpendingJarId(null)} className="text-[#ccc] hover:text-[#333] transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSpendFromJar} className="p-6">
+              {(() => {
+                const jar = jars.find((j: any) => j.id === spendingJarId);
+                if (!jar) return null;
+                const stats = getJarStats(jar);
+                return (
+                  <div className="mb-5 p-3 rounded-xl bg-[#f9fafb] border border-[#e5e5e5]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{jar.icon}</span>
+                      <span className="text-[14px] font-semibold text-[#111]">{jar.title}</span>
+                    </div>
+                    <div className="text-[12px] text-[#888]">
+                      Hôm nay đã chi: <span className="font-bold tabular-nums text-[#333]">{formatVND(stats.spentToday)}</span>
+                      <span className="text-[#bbb]"> / {formatVND(stats.dailyAllowance)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="mb-4">
+                <label className="block text-[12px] font-semibold text-[#999] mb-1.5 uppercase tracking-wide">Số tiền chi</label>
+                <MoneyInput value={spendAmount} onChange={setSpendAmount} />
+              </div>
+              <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 text-[14px] font-semibold transition-colors shadow-sm">
+                Xác nhận ghi chi
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ═══════════════════════ MODAL ═══════════════════════ */}
       {modalType && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setModalType(null)}>
@@ -799,6 +1055,7 @@ export default function FinanceBoard() {
                 {modalType === 'budget' && (budgetType === 'expected-income' ? 'Thêm khoản dự thu' : 'Thêm khoản dự chi')}
                 {modalType === 'goal' && 'Tạo mục tiêu'}
                 {modalType === 'subscription' && 'Thêm gói đăng ký'}
+                {modalType === 'jar' && 'Tạo hủ chi tiêu'}
               </h3>
               <button onClick={() => setModalType(null)} className="text-[#ccc] hover:text-[#333] transition-colors">
                 <X className="w-5 h-5" />
@@ -960,6 +1217,63 @@ export default function FinanceBoard() {
                   </div>
                   <button type="submit" className="w-full bg-[#111] text-white rounded-xl py-3 text-[14px] font-semibold hover:bg-[#333] transition-colors">
                     Lưu gói đăng ký
+                  </button>
+                </form>
+              )}
+
+              {/* ── Jar Form ── */}
+              {modalType === 'jar' && (
+                <form onSubmit={handleCreateJar} className="space-y-4">
+                  <div>
+                    <label className="block text-[12px] font-semibold text-[#999] mb-1.5 uppercase tracking-wide">Tên hủ chi tiêu</label>
+                    <input type="text" value={jarTitle} onChange={e => setJarTitle(e.target.value)} required
+                      className="w-full border border-[#e5e5e5] rounded-xl px-4 py-2.5 text-[15px] outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all"
+                      placeholder="Ví dụ: Tiền ăn, Xăng xe..." />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold text-[#999] mb-1.5 uppercase tracking-wide">Biểu tượng</label>
+                    <div className="flex flex-wrap gap-2">
+                      {JAR_ICONS.map(icon => (
+                        <button key={icon} type="button" onClick={() => setJarIcon(icon)}
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${jarIcon === icon ? 'bg-emerald-100 ring-2 ring-emerald-500 shadow-sm' : 'bg-[#f5f5f5] hover:bg-[#eee]'}`}>
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold text-[#999] mb-1.5 uppercase tracking-wide">Ngân sách tháng</label>
+                    <MoneyInput value={jarBudget} onChange={setJarBudget} />
+                    {jarBudget && parseInt(jarDays) > 0 && (
+                      <p className="text-[12px] text-emerald-600 mt-1.5 font-medium tabular-nums">
+                        → Mỗi ngày: {formatVNDShort(parseMoneyInput(jarBudget) / parseInt(jarDays))}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[12px] font-semibold text-[#999] mb-1.5 uppercase tracking-wide">Số ngày trong kỳ</label>
+                      <input type="number" value={jarDays} onChange={e => setJarDays(e.target.value)} min="1" max="366"
+                        className="w-full border border-[#e5e5e5] rounded-xl px-4 py-2.5 text-[15px] outline-none focus:border-[#111] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-semibold text-[#999] mb-1.5 uppercase tracking-wide">Ngày bắt đầu</label>
+                      <input type="date" value={jarStartDate} onChange={e => setJarStartDate(e.target.value)}
+                        className="w-full border border-[#e5e5e5] rounded-xl px-4 py-2.5 text-[15px] outline-none focus:border-[#111] bg-white transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold text-[#999] mb-1.5 uppercase tracking-wide">Màu sắc</label>
+                    <div className="flex gap-2">
+                      {['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#000000'].map(c => (
+                        <button key={c} type="button" onClick={() => setJarColor(c)}
+                          className={`w-8 h-8 rounded-lg transition-all ${jarColor === c ? 'ring-2 ring-offset-2 ring-[#111] scale-110' : 'hover:scale-105'}`}
+                          style={{ background: c }} />
+                      ))}
+                    </div>
+                  </div>
+                  <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 text-[14px] font-semibold transition-colors shadow-sm">
+                    Tạo hủ chi tiêu
                   </button>
                 </form>
               )}

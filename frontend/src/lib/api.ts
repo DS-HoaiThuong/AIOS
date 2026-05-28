@@ -57,6 +57,21 @@ export const createBudgetItem = (data: any) =>
 export const deleteBudgetItem = (id: string) =>
   apiFetch(`/finance/budget/${id}`, { method: 'DELETE' });
 
+// Spending Jars API
+export const fetchJars = () => apiFetch('/finance/jars');
+
+export const createJar = (data: any) =>
+  apiFetch('/finance/jars', { method: 'POST', body: JSON.stringify(data) });
+
+export const updateJar = (id: string, data: any) =>
+  apiFetch(`/finance/jars/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+
+export const deleteJar = (id: string) =>
+  apiFetch(`/finance/jars/${id}`, { method: 'DELETE' });
+
+export const spendFromJar = (id: string, amount: number, date?: string) =>
+  apiFetch(`/finance/jars/${id}/spend`, { method: 'POST', body: JSON.stringify({ amount, date }) });
+
 // Life API
 export const fetchHabits = () => apiFetch('/life/habits');
 

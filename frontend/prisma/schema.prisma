@@ -111,3 +111,15 @@ model BudgetItem {
   category    String   @default("Khác")
   createdAt   DateTime @default(now())
 }
+
+model SpendingJar {
+  id            String   @id @default(cuid())
+  title         String               // "Tiền ăn", "Xăng xe"...
+  icon          String   @default("🏦") // emoji icon
+  monthlyBudget Float                // Tổng ngân sách tháng (VD: 3000000)
+  startDate     String               // YYYY-MM-DD ngày bắt đầu kỳ
+  daysInPeriod  Int      @default(30)  // Số ngày trong kỳ
+  dailySpending String   @default("{}") // JSON: {"2026-06-01": 50000, ...}
+  color         String   @default("#10b981")
+  createdAt     DateTime @default(now())
+}
