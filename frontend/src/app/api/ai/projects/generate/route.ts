@@ -43,13 +43,17 @@ Rules:
 - Output raw JSON only, no explanation`;
 
     const model = getGemini();
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+      }
+    });
     const raw = result.response.text();
 
     let parsed: any;
     try {
-      const cleaned = raw.replace(/```json|```/g, '').trim();
-      parsed = JSON.parse(cleaned);
+      parsed = JSON.parse(raw);
     } catch (e) {
       console.error('Failed to parse Gemini JSON:', raw);
       return NextResponse.json({ error: 'AI returned invalid JSON. Please try again.' }, { status: 500 });

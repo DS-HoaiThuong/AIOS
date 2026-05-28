@@ -25,13 +25,17 @@ Return ONLY a valid JSON object in this format: { "suggestions": [ { "id": "..."
 Tasks: ${JSON.stringify(tasks)}`;
 
     const model = getGemini();
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+      }
+    });
     const raw = result.response.text();
 
     let suggestions = [];
     try {
-      const cleaned = raw.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = JSON.parse(raw);
       suggestions = parsed.suggestions || parsed || [];
     } catch (e) {
       suggestions = [];
